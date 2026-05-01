@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package flight;
+
+option java_package = "com.tbank.grpc";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+enum FlightStatus {
+  FLIGHT_STATUS_UNSPECIFIED = 0;
+  SCHEDULED = 1;
+  DEPARTED = 2;
+  CANCELLED = 3;
+  COMPLETED = 4;
+}
+
+enum ReservationStatus {
+  RESERVATION_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  CONFIRMED = 2;
+  RELEASED = 3;
+  EXPIRED = 4;
+}
+
+service FlightService {
+  rpc SearchFlights (SearchRequest) returns (SearchResponse);
+  rpc GetFlight (GetFlightRequest) returns (Flight);
+  rpc ReserveSeats (ReserveRequest) returns (ReserveResponse);
+  rpc ReleaseReservation (ReleaseRequest) returns (ReleaseResponse);
+}
+
+message SearchRequest {
+  string origin = 1;
+  string destination = 2;
+  optional string date = 3;
+}
+
+message SearchResponse {
+  repeated Flight flights = 1;
+}
+
+message GetFlightRequest {
+  string flight_id = 1;
+}
+
+message ReserveRequest {
+  string flight_id = 1;
+  string booking_id = 2;
+  int32 seat_count = 3;
+}
+
+message ReserveResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ReleaseRequest {
+  string booking_id = 1;
+}
+
+message ReleaseResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message Flight {
+  string id = 1;
+  string flight_number = 2;
+  string airline = 3;
+  string origin_iata = 4;
+  string destination_iata = 5;
+  google.protobuf.Timestamp departure_time = 6;
+  google.protobuf.Timestamp arrival_time = 7;
+  int32 total_seats = 8;
+  int32 available_seats = 9;
+  double price = 10;
+  FlightStatus status = 11;
+}

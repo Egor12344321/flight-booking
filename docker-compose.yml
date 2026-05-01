@@ -1,0 +1,129 @@
+services:
+  flight-db:
+    image: postgres:16-alpine
+    container_name: flight-db
+    environment:
+      POSTGRES_DB: flightdb
+      POSTGRES_USER: flight_user
+      POSTGRES_PASSWORD: flight_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - flight-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flight_user -d flightdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flight-booking-net
+
+  flight-migrations:
+    image: flyway/flyway:10-alpine
+    container_name: flight-migrations
+    depends_on:
+      flight-db:
+        condition: service_healthy
+    volumes:
+      - ./flight-service/migrations:/flyway/sql
+    command: >
+      -url=jdbc:postgresql://flight-db:5432/flightdb
+      -user=flight_user
+      -password=flight_pass
+      -connectRetries=30
+      migrate
+    networks:
+      - flight-booking-net
+    restart: on-failure
+
+  flight-service:
+    build: ./flight-service
+    container_name: flight-service
+    depends_on:
+      flight-migrations:
+        condition: service_completed_successfully
+    ports:
+      - "8081:8080"
+    environment:
+      DB_HOST: flight-db
+      DB_PORT: 5432
+      DB_NAME: flightdb
+      DB_USER: flight_user
+      DB_PASS: flight_pass
+    networks:
+      - flight-booking-net
+
+  booking-db:
+    image: postgres:16-alpine
+    container_name: booking-db
+    environment:
+      POSTGRES_DB: bookingdb
+      POSTGRES_USER: booking_user
+      POSTGRES_PASSWORD: booking_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - booking-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking_user -d bookingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flight-booking-net
+
+  booking-migrations:
+    image: flyway/flyway:10-alpine
+    container_name: booking-migrations
+    depends_on:
+      booking-db:
+        condition: service_healthy
+    volumes:
+      - ./booking-service/migrations:/flyway/sql
+    command: >
+      -url=jdbc:postgresql://booking-db:5432/bookingdb
+      -user=booking_user
+      -password=booking_pass
+      -connectRetries=30
+      migrate
+    networks:
+      - flight-booking-net
+    restart: on-failure
+
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    depends_on:
+      booking-migrations:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: booking-db
+      DB_PORT: 5432
+      DB_NAME: bookingdb
+      DB_USER: booking_user
+      DB_PASS: booking_pass
+      FLIGHT_SERVICE_URL: flight-service:8080
+    networks:
+      - flight-booking-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: flight-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - flight-booking-net
+
+networks:
+  flight-booking-net:
+    driver: bridge
+
+volumes:
+  flight-data:
+  booking-data:
+  redis-data:
