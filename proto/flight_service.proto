@@ -25,7 +25,7 @@ enum ReservationStatus {
 
 service FlightService {
   rpc SearchFlights (SearchRequest) returns (SearchResponse);
-  rpc GetFlight (GetFlightRequest) returns (Flight);
+  rpc GetFlight (GetFlightRequest) returns (FlightData);
   rpc ReserveSeats (ReserveRequest) returns (ReserveResponse);
   rpc ReleaseReservation (ReleaseRequest) returns (ReleaseResponse);
 }
@@ -37,34 +37,14 @@ message SearchRequest {
 }
 
 message SearchResponse {
-  repeated Flight flights = 1;
+  repeated FlightData flights = 1;
 }
 
 message GetFlightRequest {
   string flight_id = 1;
 }
 
-message ReserveRequest {
-  string flight_id = 1;
-  string booking_id = 2;
-  int32 seat_count = 3;
-}
-
-message ReserveResponse {
-  bool success = 1;
-  string message = 2;
-}
-
-message ReleaseRequest {
-  string booking_id = 1;
-}
-
-message ReleaseResponse {
-  bool success = 1;
-  string message = 2;
-}
-
-message Flight {
+message FlightData {
   string id = 1;
   string flight_number = 2;
   string airline = 3;
@@ -76,4 +56,27 @@ message Flight {
   int32 available_seats = 9;
   double price = 10;
   FlightStatus status = 11;
+}
+
+message ReserveRequest {
+  string flight_id = 1;
+  string booking_id = 2;
+  int32 seat_count = 3;
+}
+
+message ReserveResponse {
+  bool success = 1;
+  string message = 2;
+  string reservation_id = 3;
+  int32 seat_count = 4;
+  ReservationStatus status = 5;
+}
+
+message ReleaseRequest {
+  string booking_id = 1;
+}
+
+message ReleaseResponse {
+  bool success = 1;
+  string message = 2;
 }

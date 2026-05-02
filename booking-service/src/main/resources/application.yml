@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: booking-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:bookingdb}
+    username: ${DB_USER:booking_user}
+    password: ${DB_PASS:booking_pass}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+grpc:
+  client:
+    flight-service:
+      address: ${FLIGHT_SERVICE_HOST:localhost}:${FLIGHT_SERVICE_PORT:9090}
+      negotiation-type: plaintext
