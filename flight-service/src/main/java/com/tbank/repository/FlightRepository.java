@@ -40,7 +40,7 @@ public class FlightRepository {
         return jdbcTemplate.query(sql, flightRowMapper, params);
     }
 
-    public Optional<Flight> findByIdWithLock(UUID id, UUID bookingId) {
+    public Optional<Flight> findByIdWithLock(UUID id) {
         String sql = "SELECT * FROM flights WHERE id = ? FOR UPDATE";
         List<Flight> flights = jdbcTemplate.query(sql, flightRowMapper, id);
         return flights.isEmpty() ? Optional.empty() : Optional.of(flights.get(0));
@@ -49,6 +49,29 @@ public class FlightRepository {
     public int updateAvailableSeats(UUID flightId, int newAvailableSeats) {
         String sql = "UPDATE flights SET available_seats = ? WHERE id = ?";
         return jdbcTemplate.update(sql, newAvailableSeats, flightId);
+    }
+
+    public Flight save(Flight flight) {
+        String sql = "INSERT INTO flights (id, flight_number, airline, origin_iata, destination_iata, " +
+                "departure_time, arrival_time, total_seats, available_seats, price, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        UUID id = flight.getId() != null ? flight.getId() : UUID.randomUUID();
+
+        jdbcTemplate.update(sql, id, flight.getFlightNumber(), flight.getAirline(),
+                flight.getOriginIata(), flight.getDestinationIata(),
+                java.sql.Timestamp.from(flight.getDepartureTime()),
+                java.sql.Timestamp.from(flight.getArrivalTime()),
+                flight.getTotalSeats(), flight.getAvailableSeats(),
+                flight.getPrice(), flight.getStatus());
+
+        flight.setId(id);
+        return flight;
+    }
+
+    public void deleteById(UUID id) {
+        String sql = "DELETE FROM flights WHERE id = ?";
+        jdbcTemplate.update(sql, id);
     }
 
     private final RowMapper<Flight> flightRowMapper = (rs, rowNum) -> {
